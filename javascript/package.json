@@ -1,0 +1,33 @@
+{
+    "name": "@truthmark/sdk",
+    "version": "1.0.0",
+    "description": "Official JavaScript/TypeScript SDK for TruthMark invisible watermarking",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "scripts": {
+        "build": "tsc",
+        "test": "jest",
+        "prepublishOnly": "npm run build"
+    },
+    "keywords": [
+        "watermark",
+        "invisible-watermark",
+        "truthmark",
+        "image-protection",
+        "copyright"
+    ],
+    "author": "TruthMark Team",
+    "license": "MIT",
+    "dependencies": {
+        "form-data": "^4.0.0"
+    },
+    "devDependencies": {
+        "@types/node": "^20.0.0",
+        "typescript": "^5.0.0",
+        "jest": "^29.0.0",
+        "@types/jest": "^29.0.0"
+    },
+    "engines": {
+        "node": ">=16.0.0"
+    }
+}
