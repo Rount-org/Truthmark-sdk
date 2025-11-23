@@ -1,6 +1,8 @@
 from typing import Optional, Dict, Any, Tuple
 import numpy as np
 import cv2
+import os
+# Import from Core
 from truthmark.ai.neural import NeuralWatermarker
 from truthmark.core.ledger import TruthChainLedger
 
@@ -27,6 +29,9 @@ class TruthMarkClient:
             Dictionary with metadata and output path
         """
         # Load image
+        if not os.path.exists(image_path):
+            raise ValueError(f"Image not found: {image_path}")
+            
         image = cv2.imread(image_path)
         if image is None:
             raise ValueError(f"Could not load image: {image_path}")
@@ -58,6 +63,9 @@ class TruthMarkClient:
         Returns:
             Dictionary with extracted message and confidence
         """
+        if not os.path.exists(image_path):
+            raise ValueError(f"Image not found: {image_path}")
+            
         image = cv2.imread(image_path)
         if image is None:
             raise ValueError(f"Could not load image: {image_path}")
