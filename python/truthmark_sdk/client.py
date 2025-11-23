@@ -75,8 +75,14 @@ class TruthMarkClient:
         
         if payload:
             try:
-                message = payload.decode('utf-8')
+                # Try to decode as UTF-8
+                if isinstance(payload, bytes):
+                    # Remove potential null bytes or garbage at the end if needed
+                    message = payload.decode('utf-8', errors='ignore').strip('\x00')
+                else:
+                    message = str(payload)
             except (UnicodeDecodeError, AttributeError):
+                # Fallback to string representation of bytes if decoding fails completely
                 message = str(payload)
                 
             return {
