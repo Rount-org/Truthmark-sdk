@@ -76,7 +76,7 @@ class TruthMarkClient:
         if payload:
             try:
                 message = payload.decode('utf-8')
-            except:
+            except (UnicodeDecodeError, AttributeError):
                 message = str(payload)
                 
             return {

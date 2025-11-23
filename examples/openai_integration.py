@@ -53,7 +53,7 @@ def simulate_openai_integration():
     watermarked_path = "dalle_gen_protected.png"
     result = client.encode(original_path, message, watermarked_path)
     
-    print(f"   ✓ Watermark Embedded!")
+    print("   ✓ Watermark Embedded!")
     print(f"   ✓ PSNR Quality: {result['psnr']:.2f} dB (Invisible)")
     print(f"   ✓ Saved to: {watermarked_path}")
 
@@ -94,7 +94,7 @@ def simulate_openai_integration():
             data = json.loads(decode_result['message'])
             print(f"   Source: {data.get('source')}")
             print(f"   Gen ID: {data.get('gen_id')}")
-        except:
+        except json.JSONDecodeError:
             pass
     else:
         print("\n❌ FAILED: Could not verify origin.")
