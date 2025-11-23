@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>TruthMark.SDK</RootNamespace>
+    <AssemblyName>TruthMark.SDK</AssemblyName>
+    <Version>1.0.0</Version>
+    <Authors>TruthMark Team</Authors>
+    <Company>TruthMark</Company>
+    <Description>Official C# SDK for TruthMark invisible watermarking</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Text.Json" Version="7.0.0" />
+  </ItemGroup>
+
+</Project>
