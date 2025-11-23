@@ -4,7 +4,8 @@
         "module": "commonjs",
         "lib": [
             "ES2020",
-            "DOM"
+            "DOM",
+            "DOM.Iterable"
         ],
         "declaration": true,
         "outDir": "./dist",
@@ -14,7 +15,10 @@
         "skipLibCheck": true,
         "forceConsistentCasingInFileNames": true,
         "moduleResolution": "node",
-        "resolveJsonModule": true
+        "resolveJsonModule": true,
+        "types": [
+            "node"
+        ]
     },
     "include": [
         "src/**/*"

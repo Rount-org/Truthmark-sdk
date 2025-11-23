@@ -1,3 +1,6 @@
+/// <reference lib="dom" />
+/// <reference lib="dom.iterable" />
+
 /**
  * TruthMark SDK for JavaScript/TypeScript
  * Official client for TruthMark API
@@ -36,21 +39,19 @@ export class TruthMarkClient {
         imagePath: string | File | Blob,
         message: string
     ): Promise<EncodeResult> {
-        const formData = new FormData();
-
         if (typeof imagePath === 'string') {
             // Node.js environment
-            const fs = require('fs');
-            const path = require('path');
-            const FormData = require('form-data');
+            const fs = await import('node:fs');
+            const path = await import('node:path');
+            const FormDataNode = await import('form-data');
 
-            const form = new FormData();
+            const form = new FormDataNode.default();
             form.append('file', fs.createReadStream(imagePath));
             form.append('message', message);
 
             const response = await fetch(`${this.baseUrl}/v1/encode`, {
                 method: 'POST',
-                body: form,
+                body: form as any,
                 headers: this.apiKey ? { 'Authorization': `Bearer ${this.apiKey}` } : {}
             });
 
@@ -61,6 +62,7 @@ export class TruthMarkClient {
             return response.json();
         } else {
             // Browser environment
+            const formData = new FormData();
             formData.append('file', imagePath);
             formData.append('message', message);
 
@@ -79,19 +81,17 @@ export class TruthMarkClient {
     }
 
     async decode(imagePath: string | File | Blob): Promise<DecodeResult> {
-        const formData = new FormData();
-
         if (typeof imagePath === 'string') {
             // Node.js environment
-            const fs = require('fs');
-            const FormData = require('form-data');
+            const fs = await import('node:fs');
+            const FormDataNode = await import('form-data');
 
-            const form = new FormData();
+            const form = new FormDataNode.default();
             form.append('file', fs.createReadStream(imagePath));
 
             const response = await fetch(`${this.baseUrl}/v1/decode`, {
                 method: 'POST',
-                body: form,
+                body: form as any,
                 headers: this.apiKey ? { 'Authorization': `Bearer ${this.apiKey}` } : {}
             });
 
@@ -102,6 +102,7 @@ export class TruthMarkClient {
             return response.json();
         } else {
             // Browser environment
+            const formData = new FormData();
             formData.append('file', imagePath);
 
             const response = await fetch(`${this.baseUrl}/v1/decode`, {
