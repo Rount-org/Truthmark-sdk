@@ -77,10 +77,20 @@ class TruthMarkClient:
             try:
                 # Try to decode as UTF-8
                 if isinstance(payload, bytes):
-                    # Remove potential null bytes or garbage at the end if needed
-                    message = payload.decode('utf-8', errors='ignore').strip('\x00')
+                    # First, try to find a null byte terminator
+                    null_index = payload.find(b'\x00')
+                    if null_index != -1:
+                        payload = payload[:null_index]
+                    
+                    # Decode with error handling
+                    decoded = payload.decode('utf-8', errors='ignore')
+                    
+                    # Filter out non-printable characters (keep only printable ASCII + extended UTF-8)
+                    # This removes garbage while preserving actual text
+                    message = ''.join(char for char in decoded if char.isprintable() or char in '\n\r\t')
+                    message = message.strip()
                 else:
-                    message = str(payload)
+                    message = str(payload).strip()
             except (UnicodeDecodeError, AttributeError):
                 # Fallback to string representation of bytes if decoding fails completely
                 message = str(payload)
