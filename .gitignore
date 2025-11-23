@@ -119,3 +119,153 @@ cython_debug/
 
 # VS Code
 .vscode/
+
+# ====================
+# .NET / C# BUILD FILES
+# ====================
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+*.user
+*.userosscache
+*.suo
+*.cache
+*.csproj.nuget.dgspec.json
+*.csproj.nuget.g.props
+*.csproj.nuget.g.targets
+project.assets.json
+project.nuget.cache
+*.AssemblyInfo.cs
+*.GeneratedMSBuildEditorConfig.editorconfig
+*.GlobalUsings.g.cs
+*.AssemblyReference.cache
+*.assets.cache
+*.AssemblyInfoInputs.cache
+.vs/
+*.DotSettings.user
+
+# ====================
+# JAVA BUILD FILES
+# ====================
+target/
+*.class
+*.jar
+!gradle-wrapper.jar
+*.war
+*.ear
+*.nar
+hs_err_pid*
+replay_pid*
+
+# Maven
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+# IntelliJ IDEA
+*.iml
+*.ipr
+*.iws
+.idea/
+out/
+
+# ====================
+# NODE.JS / JAVASCRIPT / TYPESCRIPT
+# ====================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Build outputs
+dist/
+*.tsbuildinfo
+.cache/
+
+# ====================
+# GO BUILD FILES
+# ====================
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+go.work
+vendor/
+
+# ====================
+# KOTLIN BUILD FILES
+# ====================
+*.kotlin_module
+*.kt~
+
+# ====================
+# PHP BUILD FILES
+# ====================
+composer.lock
+vendor/
+.phpunit.result.cache
+
+# ====================
+# RUBY BUILD FILES
+# ====================
+*.gem
+*.rbc
+/.config
+/coverage/
+/InstalledFiles
+/pkg/
+/spec/reports/
+/spec/examples.txt
+/test/tmp/
+/test/version_tmp/
+/tmp/
+.bundle/
+Gemfile.lock
+
+# ====================
+# SWIFT BUILD FILES
+# ====================
+.build/
+*.xcodeproj
+*.xcworkspace
+!*.xcworkspace/contents.xcworkspacedata
+*.xcuserstate
+*.swiftpm/
+DerivedData/
+.swiftpm/xcode/package.xcworkspace/
+
+# ====================
+# SYSTEM & EDITOR FILES
+# ====================
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+
