@@ -1,13 +1,14 @@
 # TruthMark SDK - Complete Multi-Language Suite
 
-Professional SDKs for TruthMark invisible watermarking API in 9 programming languages.
+Professional SDKs for TruthMark invisible watermarking API in 10 programming languages.
 
 ## 🌍 Available SDKs
 
 | Language | Status | Installation | Documentation |
 |----------|--------|--------------|---------------|
 | **Python** | ✅ Ready | `pip install truthmark-sdk` | [Docs](./python/README.md) |
-| **JavaScript/TS** | ✅ Ready | `npm install @truthmark/sdk` | [Docs](./javascript/README.md) |
+| **JavaScript** | ✅ Ready | `npm install @truthmark/sdk-javascript` | [Docs](./javascript/README.md) |
+| **TypeScript** | ✅ Ready | `npm install @truthmark/sdk-typescript` | [Docs](./typescript/README.md) |
 | **Java** | ✅ Ready | Maven: `com.truthmark:truthmark-sdk:1.0.0` | [Docs](./java/README.md) |
 | **Go** | ✅ Ready | `go get github.com/truthmark/sdk` | [Docs](./go/README.md) |
 | **C# (.NET)** | ✅ Ready | NuGet: `TruthMark.SDK` | [Docs](./csharp/README.md) |
@@ -29,9 +30,18 @@ result = client.encode("image.png", "My watermark", "output.png")
 decoded = client.decode("output.png")
 ```
 
-### JavaScript/TypeScript
+### JavaScript
 ```javascript
-const { TruthMarkClient } = require('@truthmark/sdk');
+const { TruthMarkClient } = require('@truthmark/sdk-javascript');
+
+const client = new TruthMarkClient();
+const result = await client.encode('./image.png', 'My watermark');
+const decoded = await client.decode('./output.png');
+```
+
+### TypeScript
+```typescript
+import { TruthMarkClient } from '@truthmark/sdk-typescript';
 
 const client = new TruthMarkClient();
 const result = await client.encode('./image.png', 'My watermark');
@@ -99,8 +109,9 @@ Each SDK includes:
 
 ## 🏗️ Build Systems
 
-- **Python**: setuptools, pip installable
-- **JavaScript**: TypeScript + npm
+- **Python**: setuptools, pip install able
+- **JavaScript**: Pure JavaScript, no build step
+- **TypeScript**: TypeScript + npm
 - **Java**: Maven (pom.xml)
 - **Go**: Go modules (go.mod)
 - **C#**: .NET 6+ (.csproj)

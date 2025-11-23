@@ -2,7 +2,6 @@ package com.truthmark.sdk;
 
 import okhttp3.*;
 import com.google.gson.Gson;
-import com.google.gson.JsonObject;
 
 import java.io.File;
 import java.io.IOException;
@@ -57,8 +56,9 @@ public class TruthMarkClient {
 
     /**
      * Embed an invisible watermark into an image
+     * 
      * @param imagePath Path to input image
-     * @param message Text to embed (max 500 chars)
+     * @param message   Text to embed (max 500 chars)
      * @return EncodeResult with metadata and download URL
      */
     public EncodeResult encode(String imagePath, String message) throws IOException {
@@ -94,6 +94,7 @@ public class TruthMarkClient {
 
     /**
      * Extract watermark from an image
+     * 
      * @param imagePath Path to watermarked image
      * @return DecodeResult with extracted message
      */
