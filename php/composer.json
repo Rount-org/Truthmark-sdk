@@ -1,0 +1,23 @@
+{
+    "name": "truthmark-php-sdk",
+    "description": "Official PHP SDK for TruthMark invisible watermarking",
+    "version": "1.0.0",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "TruthMark Team",
+            "email": "contact.darkmintis@gmail.com"
+        }
+    ],
+    "require": {
+        "php": ">=7.4",
+        "ext-curl": "*",
+        "ext-json": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "TruthMark\\SDK\\": "src/"
+        }
+    }
+}

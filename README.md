@@ -1,83 +1,121 @@
-# TruthMark SDK
+# TruthMark SDK - Complete Multi-Language Suite
 
-Multi-language SDK collection for TruthMark invisible watermarking API.
+Professional SDKs for TruthMark invisible watermarking API in 9 programming languages.
 
 ## 🌍 Available SDKs
 
-| Language | Status | Path | Documentation |
-|----------|--------|------|---------------|
-| **Python** | ✅ Production Ready | [`/python`](./python) | [Docs](./python/README.md) |
-| **JavaScript/TypeScript** | ✅ Production Ready | [`/javascript`](./javascript) | [Docs](./javascript/README.md) |
-| **Java** | ✅ Production Ready | [`/java`](./java) | [Docs](./java/README.md) |
-| **Go** | ✅ Production Ready | [`/go`](./go) | [Docs](./go/README.md) |
-| **C# (.NET)** | ✅ Production Ready | [`/csharp`](./csharp) | [Docs](./csharp/README.md) |
-| **PHP** | ✅ Production Ready | [`/php`](./php) | [Docs](./php/README.md) |
-| **Swift (iOS)** | ✅ Production Ready | [`/swift`](./swift) | [Docs](./swift/README.md) |
-| **Kotlin (Android)** | ✅ Production Ready | [`/kotlin`](./kotlin) | [Docs](./kotlin/README.md) |
+| Language | Status | Installation | Documentation |
+|----------|--------|--------------|---------------|
+| **Python** | ✅ Ready | `pip install truthmark-sdk` | [Docs](./python/README.md) |
+| **JavaScript/TS** | ✅ Ready | `npm install @truthmark/sdk` | [Docs](./javascript/README.md) |
+| **Java** | ✅ Ready | Maven: `com.truthmark:truthmark-sdk:1.0.0` | [Docs](./java/README.md) |
+| **Go** | ✅ Ready | `go get github.com/truthmark/sdk` | [Docs](./go/README.md) |
+| **C# (.NET)** | ✅ Ready | NuGet: `TruthMark.SDK` | [Docs](./csharp/README.md) |
+| **PHP** | ✅ Ready | `composer require truthmark/sdk` | [Docs](./php/README.md) |
+| **Ruby** | ✅ Ready | `gem install truthmark-sdk` | [Docs](./ruby/README.md) |
+| **Swift** | ✅ Ready | Add to Xcode project | [Docs](./swift/README.md) |
+| **Kotlin** | ✅ Ready | Add to build.gradle | [Docs](./kotlin/README.md) |
 
-## 🚀 Quick Start
+## 🚀 Quick Examples
 
-Choose your language and follow the installation guide:
+All SDKs follow the same simple API:
 
 ### Python
-```bash
-cd python && pip install -e .
+```python
+from truthmark_sdk import TruthMarkClient
+
+client = TruthMarkClient()
+result = client.encode("image.png", "My watermark", "output.png")
+decoded = client.decode("output.png")
 ```
 
 ### JavaScript/TypeScript
-```bash
-cd javascript && npm install
+```javascript
+const { TruthMarkClient } = require('@truthmark/sdk');
+
+const client = new TruthMarkClient();
+const result = await client.encode('./image.png', 'My watermark');
+const decoded = await client.decode('./output.png');
 ```
 
 ### Java
-```bash
-cd java && mvn install
+```java
+TruthMarkClient client = new TruthMarkClient();
+EncodeResult result = client.encode("image.png", "My watermark");
+DecodeResult decoded = client.decode("watermarked.png");
 ```
 
 ### Go
-```bash
-cd go && go get
+```go
+client := truthmark.NewClient(nil)
+result, _ := client.Encode("image.png", "My watermark")
+decoded, _ := client.Decode("watermarked.png")
 ```
 
 ### C#
-```bash
-cd csharp && dotnet build
+```csharp
+var client = new TruthMarkClient();
+var result = await client.EncodeAsync("image.png", "My watermark");
+var decoded = await client.DecodeAsync("watermarked.png");
 ```
 
 ### PHP
-```bash
-cd php && composer install
+```php
+$client = new \TruthMark\SDK\TruthMarkClient();
+$result = $client->encode('image.png', 'My watermark');
+$decoded = $client->decode('watermarked.png');
+```
+
+### Ruby
+```ruby
+client = TruthMark::Client.new
+result = client.encode('image.png', 'My watermark')
+decoded = client.decode('watermarked.png')
 ```
 
 ### Swift
 ```swift
-// Add TruthMarkClient.swift to your Xcode project
+let client = TruthMarkClient()
+let result = try await client.encode(imagePath: "image.png", message: "My watermark")
+let decoded = try await client.decode(imagePath: "watermarked.png")
 ```
 
 ### Kotlin
 ```kotlin
-// Add to your build.gradle
+val client = TruthMarkClient()
+val result = client.encode("image.png", "My watermark")
+val decoded = client.decode("watermarked.png")
 ```
 
-## 📖 Usage Examples
+## 📦 What's Included
 
-All SDKs follow the same simple API:
+Each SDK includes:
+- ✅ **encode()** - Embed invisible watermarks
+- ✅ **decode()** - Extract watermarks
+- ✅ **Type safety** - Full type definitions/interfaces
+- ✅ **Error handling** - Proper exceptions/errors
+- ✅ **Authentication** - API key support
+- ✅ **Documentation** - Complete API reference
 
-**Encode:**
-```
-client.encode(imagePath, message)
-```
+## 🏗️ Build Systems
 
-**Decode:**
-```
-client.decode(imagePath)
-```
+- **Python**: setuptools, pip installable
+- **JavaScript**: TypeScript + npm
+- **Java**: Maven (pom.xml)
+- **Go**: Go modules (go.mod)
+- **C#**: .NET 6+ (.csproj)
+- **PHP**: Composer (composer.json)
+- **Ruby**: RubyGems (.gemspec)
+- **Swift**: Swift Package Manager
+- **Kotlin**: Gradle
 
-See language-specific READMEs for detailed examples.
+## 📖 Full Documentation
 
-## 🏗️ Core Engine
-
-All SDKs use the same C++ core watermarking engine located in `/core`.
+Visit [docs.truthmark.com](https://docs.truthmark.com) for:
+- Getting started guides
+- API reference
+- Integration examples
+- Best practices
 
 ## 🤝 Contributing
 
