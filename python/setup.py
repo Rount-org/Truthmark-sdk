@@ -4,7 +4,7 @@ setup(
     name="truthmark-sdk",
     version="1.0.0",
     description="Developer SDK for TruthMark - Easy integration for AI watermarking",
-    author="Round Tech",
+    author="Rount",
     packages=find_packages(),
     install_requires=[
         "truthmark-core>=1.0.0",
