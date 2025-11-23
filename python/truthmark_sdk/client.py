@@ -1,24 +1,30 @@
-from typing import Optional, Dict, Any, Tuple
-import numpy as np
-import cv2
+from typing import Optional, Dict, Any
 import os
-# Import from Core
-from truthmark.ai.neural import NeuralWatermarker
-from truthmark.core.ledger import TruthChainLedger
+import requests
 
 class TruthMarkClient:
     """
-    Simple SDK wrapper for TruthMark Core.
-    Provides easy-to-use methods for embedding and extracting watermarks.
+    Official Python SDK for TruthMark API.
+    Embed and extract invisible watermarks using the TruthMark cloud engine.
     """
     
-    def __init__(self, model_path: Optional[str] = None):
-        self.watermarker = NeuralWatermarker(model_path=model_path)
-        self.ledger = TruthChainLedger()
+    def __init__(self, api_key: str, base_url: str = "https://truthmark-api.onrender.com"):
+        """
+        Initialize the TruthMark client.
+        
+        Args:
+            api_key: Your API key (currently unused for public beta)
+            base_url: URL of the TruthMark API
+        """
+        self.base_url = base_url.rstrip('/')
+        self.api_key = api_key
+        self.headers = {
+            "Authorization": f"Bearer {api_key}"
+        }
 
     def encode(self, image_path: str, message: str, output_path: Optional[str] = None) -> Dict[str, Any]:
         """
-        Embed a message into an image.
+        Embed a message into an image via the API.
         
         Args:
             image_path: Path to input image
@@ -28,34 +34,33 @@ class TruthMarkClient:
         Returns:
             Dictionary with metadata and output path
         """
-        # Load image
         if not os.path.exists(image_path):
             raise ValueError(f"Image not found: {image_path}")
             
-        image = cv2.imread(image_path)
-        if image is None:
-            raise ValueError(f"Could not load image: {image_path}")
-        image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        url = f"{self.base_url}/v1/encode"
         
-        # Embed
-        payload = message.encode('utf-8')
-        watermarked, meta = self.watermarker.embed(image_rgb, payload)
-        
-        # Save if requested
-        if output_path:
-            output_bgr = cv2.cvtColor(watermarked, cv2.COLOR_RGB2BGR)
-            cv2.imwrite(output_path, output_bgr)
+        with open(image_path, 'rb') as f:
+            files = {'file': f}
+            data = {'message': message}
             
-        return {
-            "status": "success",
-            "bits_embedded": meta.get("bits_embedded"),
-            "psnr": meta.get("psnr_db"),
-            "output_path": output_path
-        }
+            try:
+                response = requests.post(url, files=files, data=data, headers=self.headers)
+                response.raise_for_status()
+                result = response.json()
+                
+                # If output path is provided, download the result
+                if output_path and 'download_url' in result:
+                    self._download_image(result['download_url'], output_path)
+                    result['output_path'] = output_path
+                    
+                return result
+                
+            except requests.exceptions.RequestException as e:
+                raise Exception(f"API Request Failed: {str(e)}")
 
     def decode(self, image_path: str) -> Dict[str, Any]:
         """
-        Extract message from an image.
+        Extract message from an image via the API.
         
         Args:
             image_path: Path to watermarked image
@@ -66,43 +71,27 @@ class TruthMarkClient:
         if not os.path.exists(image_path):
             raise ValueError(f"Image not found: {image_path}")
             
-        image = cv2.imread(image_path)
-        if image is None:
-            raise ValueError(f"Could not load image: {image_path}")
-        image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        url = f"{self.base_url}/v1/decode"
         
-        payload, confidence = self.watermarker.extract(image_rgb)
-        
-        if payload:
+        with open(image_path, 'rb') as f:
+            files = {'file': f}
+            
             try:
-                # Try to decode as UTF-8
-                if isinstance(payload, bytes):
-                    # First, try to find a null byte terminator
-                    null_index = payload.find(b'\x00')
-                    if null_index != -1:
-                        payload = payload[:null_index]
-                    
-                    # Decode with error handling
-                    decoded = payload.decode('utf-8', errors='ignore')
-                    
-                    # Filter out non-printable characters (keep only printable ASCII + extended UTF-8)
-                    # This removes garbage while preserving actual text
-                    message = ''.join(char for char in decoded if char.isprintable() or char in '\n\r\t')
-                    message = message.strip()
-                else:
-                    message = str(payload).strip()
-            except (UnicodeDecodeError, AttributeError):
-                # Fallback to string representation of bytes if decoding fails completely
-                message = str(payload)
+                response = requests.post(url, files=files, headers=self.headers)
+                response.raise_for_status()
+                return response.json()
                 
-            return {
-                "found": True,
-                "message": message,
-                "confidence": confidence
-            }
-        else:
-            return {
-                "found": False,
-                "message": None,
-                "confidence": 0.0
-            }
+            except requests.exceptions.RequestException as e:
+                raise Exception(f"API Request Failed: {str(e)}")
+
+    def _download_image(self, url: str, path: str):
+        """Helper to download image from URL"""
+        try:
+            response = requests.get(url, stream=True)
+            response.raise_for_status()
+            with open(path, 'wb') as f:
+                for chunk in response.iter_content(chunk_size=8192):
+                    f.write(chunk)
+        except Exception as e:
+            print(f"Warning: Failed to download result image: {e}")
+

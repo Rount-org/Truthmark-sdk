@@ -7,7 +7,7 @@ setup(
     author="Rount",
     packages=find_packages(),
     install_requires=[
-        "truthmark-core>=1.0.0",
+        "requests",
         "numpy",
         "opencv-python"
     ],

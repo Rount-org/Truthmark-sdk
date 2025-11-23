@@ -7,30 +7,49 @@ Official Python SDK for TruthMark invisible watermarking API.
 ```bash
 pip install truthmark-sdk
 ```
+# TruthMark Python SDK
+
+Official Python SDK for TruthMark invisible watermarking API.
+
+## Installation
+
+```bash
+pip install truthmark-sdk
+```
 
 ## Quick Start
 
 ```python
 from truthmark_sdk import TruthMarkClient
 
-# Initialize client
-client = TruthMarkClient()
+# Initialize the client (API Key optional for public beta)
+client = TruthMarkClient(api_key="your_api_key")
 
-# Encode watermark
-result = client.encode("image.png", "My secret message", "output.png")
-print(f"✓ Encoded with PSNR: {result['psnr']}")
+# 1. Encode (Embed data into image)
+result = client.encode(
+    image_path="original.jpg",
+    message="Copyright 2025 Rount Inc.",
+    output_path="protected.png"
+)
+print(f"Encoded! Saved to: {result['output_path']}")
 
-# Decode watermark
-decoded = client.decode("output.png")
-if decoded['found']:
-    print(f"✓ Message: {decoded['message']}")
+# 2. Decode (Extract data from image)
+data = client.decode("protected.png")
+
+if data["found"]:
+    print(f"Found Watermark: {data['message']}")
+    print(f"Confidence: {data['confidence']}")
+else:
+    print("No watermark found.")
 ```
 
-## API Methods
+## Features
 
-- **`encode(image_path, message, output_path)`** - Embed watermark into image
-- **`decode(image_path)`** - Extract watermark from image
+- **Cloud-Powered**: Uses the TruthMark API for heavy lifting.
+- **Lightweight**: No heavy ML dependencies locally.
+- **Secure**: Your core logic remains on the server.
+- **Easy Integration**: Simple Python interface.
 
 ## Documentation
 
-Visit [docs.truthmark.com](https://docs.truthmark.com) for full documentation.
+Full documentation is available at [https://truthmark.com/docs](https://truthmark.com/docs).
