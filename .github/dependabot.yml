@@ -1,0 +1,246 @@
+version: 2
+
+updates:
+  # Python SDK
+  - package-ecosystem: "pip"
+    directory: "/python"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "truthmark-dev-team"
+    labels:
+      - "dependencies"
+      - "python"
+    commit-message:
+      prefix: "chore(python)"
+      prefix-development: "chore(python-dev)"
+    ignore:
+      # Ignore major version updates for stable dependencies
+      - dependency-name: "numpy"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "opencv-python"
+        update-types: ["version-update:semver-major"]
+    groups:
+      dev-dependencies:
+        patterns:
+          - "pytest*"
+          - "black"
+          - "flake8"
+          - "mypy"
+          - "isort"
+      security-updates:
+        patterns:
+          - "*"
+        update-types:
+          - "security"
+
+  # JavaScript SDK
+  - package-ecosystem: "npm"
+    directory: "/javascript"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "truthmark-dev-team"
+    labels:
+      - "dependencies"
+      - "javascript"
+    commit-message:
+      prefix: "chore(js)"
+      prefix-development: "chore(js-dev)"
+    versioning-strategy: increase
+    groups:
+      dev-dependencies:
+        patterns:
+          - "jest*"
+          - "eslint*"
+          - "@types/*"
+          - "prettier"
+      security-updates:
+        patterns:
+          - "*"
+        update-types:
+          - "security"
+
+  # TypeScript SDK
+  - package-ecosystem: "npm"
+    directory: "/typescript"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "truthmark-dev-team"
+    labels:
+      - "dependencies"
+      - "typescript"
+    commit-message:
+      prefix: "chore(ts)"
+      prefix-development: "chore(ts-dev)"
+    versioning-strategy: increase
+    groups:
+      dev-dependencies:
+        patterns:
+          - "jest*"
+          - "eslint*"
+          - "@types/*"
+          - "prettier"
+          - "typescript"
+      security-updates:
+        patterns:
+          - "*"
+        update-types:
+          - "security"
+
+  # Go SDK
+  - package-ecosystem: "gomod"
+    directory: "/go"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "truthmark-dev-team"
+    labels:
+      - "dependencies"
+      - "go"
+    commit-message:
+      prefix: "chore(go)"
+    groups:
+      security-updates:
+        patterns:
+          - "*"
+        update-types:
+          - "security"
+
+  # Java SDK
+  - package-ecosystem: "maven"
+    directory: "/java"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "truthmark-dev-team"
+    labels:
+      - "dependencies"
+      - "java"
+    commit-message:
+      prefix: "chore(java)"
+    ignore:
+      # Ignore major Java version updates
+      - dependency-name: "org.apache.maven.plugins:*"
+        update-types: ["version-update:semver-major"]
+    groups:
+      test-dependencies:
+        patterns:
+          - "junit:*"
+          - "org.mockito:*"
+      security-updates:
+        patterns:
+          - "*"
+        update-types:
+          - "security"
+
+  # Ruby SDK
+  - package-ecosystem: "bundler"
+    directory: "/ruby"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "truthmark-dev-team"
+    labels:
+      - "dependencies"
+      - "ruby"
+    commit-message:
+      prefix: "chore(ruby)"
+    groups:
+      security-updates:
+        patterns:
+          - "*"
+        update-types:
+          - "security"
+
+  # PHP SDK (Composer)
+  - package-ecosystem: "composer"
+    directory: "/php"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "truthmark-dev-team"
+    labels:
+      - "dependencies"
+      - "php"
+    commit-message:
+      prefix: "chore(php)"
+    groups:
+      dev-dependencies:
+        patterns:
+          - "phpunit/*"
+          - "phpstan/*"
+      security-updates:
+        patterns:
+          - "*"
+        update-types:
+          - "security"
+
+  # .NET/C# SDK
+  - package-ecosystem: "nuget"
+    directory: "/csharp"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "truthmark-dev-team"
+    labels:
+      - "dependencies"
+      - "csharp"
+    commit-message:
+      prefix: "chore(csharp)"
+    groups:
+      test-dependencies:
+        patterns:
+          - "*.Test"
+          - "xunit*"
+          - "Moq"
+      security-updates:
+        patterns:
+          - "*"
+        update-types:
+          - "security"
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "truthmark-dev-team"
+    labels:
+      - "dependencies"
+      - "github-actions"
+    commit-message:
+      prefix: "ci"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
