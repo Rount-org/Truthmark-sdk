@@ -2,14 +2,16 @@ name: Python SDK CI/CD
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main]
     paths:
       - 'python/**'
       - '.github/workflows/ci-python.yml'
   pull_request:
-    branches: [main, develop]
+    branches: [main]
     paths:
       - 'python/**'
+  schedule:
+    - cron: '0 0 * * 0'  # Weekly on Sunday
 
 env:
   PYTHON_VERSION: '3.11'

@@ -2,14 +2,16 @@ name: Java SDK CI/CD
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main]
     paths:
       - 'java/**'
       - '.github/workflows/ci-java.yml'
   pull_request:
-    branches: [main, develop]
+    branches: [main]
     paths:
       - 'java/**'
+  schedule:
+    - cron: '0 0 * * 0'  # Weekly on Sunday
 
 env:
   JAVA_VERSION: '17'

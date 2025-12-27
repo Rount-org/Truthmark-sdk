@@ -2,16 +2,18 @@ name: JavaScript/TypeScript SDK CI/CD
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main]
     paths:
       - 'javascript/**'
       - 'typescript/**'
       - '.github/workflows/ci-javascript.yml'
   pull_request:
-    branches: [main, develop]
+    branches: [main]
     paths:
       - 'javascript/**'
       - 'typescript/**'
+  schedule:
+    - cron: '0 0 * * 0'  # Weekly on Sunday
 
 env:
   NODE_VERSION: '20'

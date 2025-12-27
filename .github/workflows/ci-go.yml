@@ -2,14 +2,16 @@ name: Go SDK CI/CD
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main]
     paths:
       - 'go/**'
       - '.github/workflows/ci-go.yml'
   pull_request:
-    branches: [main, develop]
+    branches: [main]
     paths:
       - 'go/**'
+  schedule:
+    - cron: '0 0 * * 0'  # Weekly on Sunday
 
 env:
   GO_VERSION: '1.21'
