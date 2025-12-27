@@ -1,0 +1,171 @@
+name: Python SDK CI/CD
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'python/**'
+      - '.github/workflows/ci-python.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'python/**'
+
+env:
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  lint:
+    name: Lint Python SDK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      
+      - name: Cache pip dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('python/requirements*.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+      
+      - name: Install dependencies
+        working-directory: python
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8 black isort mypy pylint
+          pip install -r requirements.txt 2>/dev/null || echo "No requirements.txt found"
+      
+      - name: Run black (formatter check)
+        working-directory: python
+        run: black --check --diff .
+      
+      - name: Run isort (import sorting)
+        working-directory: python
+        run: isort --check-only --diff .
+      
+      - name: Run flake8 (linter)
+        working-directory: python
+        run: flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+      
+      - name: Run pylint
+        working-directory: python
+        run: pylint truthmark_sdk/ --exit-zero
+      
+      - name: Run mypy (type checking)
+        working-directory: python
+        run: mypy truthmark_sdk/ --ignore-missing-imports || true
+
+  test:
+    name: Test Python SDK
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      
+      - name: Cache pip dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('python/requirements*.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-${{ matrix.python-version }}-
+      
+      - name: Install dependencies
+        working-directory: python
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pytest-cov pytest-mock
+          pip install -e .
+      
+      - name: Run tests with coverage
+        working-directory: python
+        run: |
+          pytest tests/ -v --cov=truthmark_sdk --cov-report=xml --cov-report=term
+      
+      - name: Upload coverage to Codecov
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11'
+        uses: codecov/codecov-action@v4
+        with:
+          files: python/coverage.xml
+          flags: python
+          name: python-sdk
+
+  build:
+    name: Build Python Package
+    runs-on: ubuntu-latest
+    needs: [lint, test]
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      
+      - name: Install build tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install build twine
+      
+      - name: Build package
+        working-directory: python
+        run: python -m build
+      
+      - name: Check package
+        working-directory: python
+        run: twine check dist/*
+      
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-package
+          path: python/dist/
+          retention-days: 7
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      
+      - name: Install dependencies
+        working-directory: python
+        run: |
+          python -m pip install --upgrade pip
+          pip install safety bandit
+          pip install -e .
+      
+      - name: Run Safety (dependency vulnerabilities)
+        working-directory: python
+        run: safety check --json || true
+      
+      - name: Run Bandit (security linter)
+        working-directory: python
+        run: bandit -r truthmark_sdk/ -f json -o bandit-report.json || true
+      
+      - name: Upload security reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-security-reports
+          path: python/*-report.json
+          retention-days: 30

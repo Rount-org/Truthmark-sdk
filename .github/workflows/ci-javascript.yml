@@ -1,0 +1,234 @@
+name: JavaScript/TypeScript SDK CI/CD
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'javascript/**'
+      - 'typescript/**'
+      - '.github/workflows/ci-javascript.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'javascript/**'
+      - 'typescript/**'
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  lint-javascript:
+    name: Lint JavaScript SDK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: javascript/package-lock.json
+      
+      - name: Install dependencies
+        working-directory: javascript
+        run: npm ci
+      
+      - name: Run ESLint
+        working-directory: javascript
+        run: npm run lint || true
+      
+      - name: Check formatting (Prettier)
+        working-directory: javascript
+        run: npx prettier --check "src/**/*.js"
+
+  lint-typescript:
+    name: Lint TypeScript SDK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: typescript/package-lock.json
+      
+      - name: Install dependencies
+        working-directory: typescript
+        run: npm ci
+      
+      - name: Run ESLint
+        working-directory: typescript
+        run: npm run lint || true
+      
+      - name: Type checking
+        working-directory: typescript
+        run: npm run type-check || npx tsc --noEmit
+      
+      - name: Check formatting (Prettier)
+        working-directory: typescript
+        run: npx prettier --check "src/**/*.ts"
+
+  test-javascript:
+    name: Test JavaScript SDK
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node-version: ['18', '20', '21']
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+          cache-dependency-path: javascript/package-lock.json
+      
+      - name: Install dependencies
+        working-directory: javascript
+        run: npm ci
+      
+      - name: Run tests with coverage
+        working-directory: javascript
+        run: npm test -- --coverage
+      
+      - name: Upload coverage
+        if: matrix.os == 'ubuntu-latest' && matrix.node-version == '20'
+        uses: codecov/codecov-action@v4
+        with:
+          files: javascript/coverage/coverage-final.json
+          flags: javascript
+          name: javascript-sdk
+
+  test-typescript:
+    name: Test TypeScript SDK
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node-version: ['18', '20', '21']
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+          cache-dependency-path: typescript/package-lock.json
+      
+      - name: Install dependencies
+        working-directory: typescript
+        run: npm ci
+      
+      - name: Build
+        working-directory: typescript
+        run: npm run build
+      
+      - name: Run tests with coverage
+        working-directory: typescript
+        run: npm test -- --coverage
+      
+      - name: Upload coverage
+        if: matrix.os == 'ubuntu-latest' && matrix.node-version == '20'
+        uses: codecov/codecov-action@v4
+        with:
+          files: typescript/coverage/coverage-final.json
+          flags: typescript
+          name: typescript-sdk
+
+  build-javascript:
+    name: Build JavaScript Package
+    runs-on: ubuntu-latest
+    needs: [lint-javascript, test-javascript]
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: javascript/package-lock.json
+      
+      - name: Install dependencies
+        working-directory: javascript
+        run: npm ci
+      
+      - name: Build package
+        working-directory: javascript
+        run: npm run build || echo "No build script defined"
+      
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: javascript-package
+          path: javascript/dist/
+          retention-days: 7
+
+  build-typescript:
+    name: Build TypeScript Package
+    runs-on: ubuntu-latest
+    needs: [lint-typescript, test-typescript]
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: typescript/package-lock.json
+      
+      - name: Install dependencies
+        working-directory: typescript
+        run: npm ci
+      
+      - name: Build package
+        working-directory: typescript
+        run: npm run build
+      
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: typescript-package
+          path: typescript/dist/
+          retention-days: 7
+
+  security-scan:
+    name: Security Scan (npm audit)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      
+      - name: Audit JavaScript SDK
+        working-directory: javascript
+        run: |
+          npm ci
+          npm audit --json > audit-javascript.json || true
+      
+      - name: Audit TypeScript SDK
+        working-directory: typescript
+        run: |
+          npm ci
+          npm audit --json > audit-typescript.json || true
+      
+      - name: Upload audit reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-audit-reports
+          path: |
+            javascript/audit-*.json
+            typescript/audit-*.json
+          retention-days: 30

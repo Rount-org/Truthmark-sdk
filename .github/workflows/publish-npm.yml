@@ -1,0 +1,110 @@
+name: Publish to npm
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish (e.g., 1.0.0)'
+        required: true
+      package:
+        description: 'Package to publish (javascript or typescript)'
+        required: true
+        default: 'both'
+
+jobs:
+  publish-javascript:
+    name: Publish JavaScript SDK to npm
+    runs-on: ubuntu-latest
+    if: github.event.inputs.package == 'javascript' || github.event.inputs.package == 'both' || github.event_name == 'release'
+    environment: production
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+      
+      - name: Install dependencies
+        working-directory: javascript
+        run: npm ci
+      
+      - name: Update version (if manual trigger)
+        if: github.event_name == 'workflow_dispatch'
+        working-directory: javascript
+        run: npm version ${{ github.event.inputs.version }} --no-git-tag-version
+      
+      - name: Build package
+        working-directory: javascript
+        run: npm run build || echo "No build step required"
+      
+      - name: Publish to npm
+        working-directory: javascript
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  publish-typescript:
+    name: Publish TypeScript SDK to npm
+    runs-on: ubuntu-latest
+    if: github.event.inputs.package == 'typescript' || github.event.inputs.package == 'both' || github.event_name == 'release'
+    environment: production
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+      
+      - name: Install dependencies
+        working-directory: typescript
+        run: npm ci
+      
+      - name: Update version (if manual trigger)
+        if: github.event_name == 'workflow_dispatch'
+        working-directory: typescript
+        run: npm version ${{ github.event.inputs.version }} --no-git-tag-version
+      
+      - name: Build package
+        working-directory: typescript
+        run: npm run build
+      
+      - name: Publish to npm
+        working-directory: typescript
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  verify-installation:
+    name: Verify npm Installation
+    needs: [publish-javascript, publish-typescript]
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+      - name: Wait for npm propagation
+        run: sleep 60
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Test JavaScript SDK installation
+        if: github.event.inputs.package == 'javascript' || github.event.inputs.package == 'both' || github.event_name == 'release'
+        run: |
+          npm install @truthmark/sdk-javascript
+          node -e "const TruthMarkClient = require('@truthmark/sdk-javascript'); console.log('✅ JavaScript SDK installed');"
+      
+      - name: Test TypeScript SDK installation
+        if: github.event.inputs.package == 'typescript' || github.event.inputs.package == 'both' || github.event_name == 'release'
+        run: |
+          npm install @truthmark/sdk-typescript
+          node -e "const { TruthMarkClient } = require('@truthmark/sdk-typescript'); console.log('✅ TypeScript SDK installed');"
