@@ -2,6 +2,7 @@
 
 ## Supported Versions
 
+<<<<<<< HEAD
 We actively support the following versions of TruthMark SDK:
 
 | Version | Supported          |
@@ -93,3 +94,22 @@ TruthMark SDK is designed to comply with:
 
 **Last Updated**: December 27, 2025  
 **Version**: 1.0
+=======
+Use this section to tell people about which versions of your project are
+currently being supported with security updates.
+
+| Version | Supported          |
+| ------- | ------------------ |
+| 5.1.x   | :white_check_mark: |
+| 5.0.x   | :x:                |
+| 4.0.x   | :white_check_mark: |
+| < 4.0   | :x:                |
+
+## Reporting a Vulnerability
+
+Use this section to tell people how to report a vulnerability.
+
+Tell them where to go, how often they can expect to get an update on a
+reported vulnerability, what to expect if the vulnerability is accepted or
+declined, etc.
+>>>>>>> 1a7ead59a2110f95087b72f10e8e1e1c5ccb7aeb
