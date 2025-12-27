@@ -1,0 +1,411 @@
+name: Release Automation
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'  # Semantic versioning tags
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., 1.2.3)'
+        required: true
+        type: string
+      dry_run:
+        description: 'Dry run (test without publishing)'
+        required: false
+        type: boolean
+        default: false
+
+env:
+  PYTHON_VERSION: '3.11'
+  NODE_VERSION: '20'
+  GO_VERSION: '1.21'
+  JAVA_VERSION: '17'
+
+jobs:
+  validate-version:
+    name: Validate Release Version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.extract.outputs.version }}
+      is_prerelease: ${{ steps.check.outputs.is_prerelease }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Extract version from tag
+        id: extract
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            VERSION=${GITHUB_REF#refs/tags/v}
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Release version: $VERSION"
+      
+      - name: Check if prerelease
+        id: check
+        run: |
+          VERSION="${{ steps.extract.outputs.version }}"
+          if [[ "$VERSION" =~ (alpha|beta|rc) ]]; then
+            echo "is_prerelease=true" >> $GITHUB_OUTPUT
+            echo "This is a prerelease version"
+          else
+            echo "is_prerelease=false" >> $GITHUB_OUTPUT
+            echo "This is a stable release"
+          fi
+      
+      - name: Validate semantic versioning
+        run: |
+          VERSION="${{ steps.extract.outputs.version }}"
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+)?$ ]]; then
+            echo "Error: Invalid semantic version format: $VERSION"
+            exit 1
+          fi
+
+  build-python:
+    name: Build Python SDK
+    needs: validate-version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      
+      - name: Install build tools
+        run: |
+          python -m pip install --upgrade pip build twine wheel
+      
+      - name: Update version in setup.py
+        working-directory: python
+        run: |
+          VERSION="${{ needs.validate-version.outputs.version }}"
+          sed -i "s/version=.*/version='$VERSION',/" setup.py
+      
+      - name: Build distribution packages
+        working-directory: python
+        run: |
+          python -m build
+          python -m twine check dist/*
+      
+      - name: Upload Python artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-dist
+          path: python/dist/
+          retention-days: 90
+
+  build-javascript:
+    name: Build JavaScript SDK
+    needs: validate-version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: javascript/package-lock.json
+      
+      - name: Update version in package.json
+        working-directory: javascript
+        run: |
+          VERSION="${{ needs.validate-version.outputs.version }}"
+          npm version $VERSION --no-git-tag-version
+      
+      - name: Install dependencies
+        working-directory: javascript
+        run: npm ci
+      
+      - name: Build package
+        working-directory: javascript
+        run: npm run build || echo "No build script defined"
+      
+      - name: Pack package
+        working-directory: javascript
+        run: npm pack
+      
+      - name: Upload JavaScript artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: javascript-dist
+          path: javascript/*.tgz
+          retention-days: 90
+
+  build-typescript:
+    name: Build TypeScript SDK
+    needs: validate-version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: typescript/package-lock.json
+      
+      - name: Update version in package.json
+        working-directory: typescript
+        run: |
+          VERSION="${{ needs.validate-version.outputs.version }}"
+          npm version $VERSION --no-git-tag-version
+      
+      - name: Install dependencies
+        working-directory: typescript
+        run: npm ci
+      
+      - name: Build package
+        working-directory: typescript
+        run: npm run build
+      
+      - name: Pack package
+        working-directory: typescript
+        run: npm pack
+      
+      - name: Upload TypeScript artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: typescript-dist
+          path: |
+            typescript/*.tgz
+            typescript/dist/
+          retention-days: 90
+
+  build-go:
+    name: Build Go SDK
+    needs: validate-version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: go/go.sum
+      
+      - name: Update version
+        working-directory: go
+        run: |
+          VERSION="${{ needs.validate-version.outputs.version }}"
+          echo "package truthmark\nconst Version = \"$VERSION\"" > version.go
+      
+      - name: Build module
+        working-directory: go
+        run: |
+          go build -v ./...
+          go mod tidy
+      
+      - name: Create module archive
+        working-directory: go
+        run: |
+          VERSION="${{ needs.validate-version.outputs.version }}"
+          tar -czf truthmark-go-v$VERSION.tar.gz *.go go.mod go.sum README.md
+      
+      - name: Upload Go artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: go-dist
+          path: go/*.tar.gz
+          retention-days: 90
+
+  build-java:
+    name: Build Java SDK
+    needs: validate-version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: 'maven'
+      
+      - name: Update version in pom.xml
+        working-directory: java
+        run: |
+          VERSION="${{ needs.validate-version.outputs.version }}"
+          mvn versions:set -DnewVersion=$VERSION
+      
+      - name: Build with Maven
+        working-directory: java
+        run: mvn clean package -DskipTests
+      
+      - name: Upload Java artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: java-dist
+          path: java/target/*.jar
+          retention-days: 90
+
+  publish-python:
+    name: Publish Python SDK to PyPI
+    needs: [validate-version, build-python]
+    runs-on: ubuntu-latest
+    if: github.event.inputs.dry_run != 'true'
+    environment: production
+    steps:
+      - name: Download Python artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: python-dist
+          path: dist/
+      
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}
+          packages-dir: dist/
+          skip-existing: true
+          verify-metadata: true
+
+  publish-npm:
+    name: Publish NPM Packages
+    needs: [validate-version, build-javascript, build-typescript]
+    runs-on: ubuntu-latest
+    if: github.event.inputs.dry_run != 'true'
+    environment: production
+    strategy:
+      matrix:
+        package: [javascript, typescript]
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          registry-url: 'https://registry.npmjs.org'
+      
+      - name: Download ${{ matrix.package }} artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ matrix.package }}-dist
+          path: ${{ matrix.package }}/
+      
+      - name: Publish to NPM
+        working-directory: ${{ matrix.package }}
+        run: |
+          if [ -f "*.tgz" ]; then
+            npm publish *.tgz --access public
+          else
+            npm publish --access public
+          fi
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  create-github-release:
+    name: Create GitHub Release
+    needs: [validate-version, build-python, build-javascript, build-typescript, build-go, build-java]
+    runs-on: ubuntu-latest
+    if: github.event.inputs.dry_run != 'true'
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-artifacts/
+      
+      - name: Generate release notes
+        id: notes
+        run: |
+          VERSION="${{ needs.validate-version.outputs.version }}"
+          PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          
+          echo "# TruthMark SDK v$VERSION" > release-notes.md
+          echo "" >> release-notes.md
+          echo "## What's Changed" >> release-notes.md
+          echo "" >> release-notes.md
+          
+          if [ -n "$PREVIOUS_TAG" ]; then
+            git log $PREVIOUS_TAG..HEAD --pretty=format:"* %s (%h)" --no-merges >> release-notes.md
+          else
+            echo "* Initial release" >> release-notes.md
+          fi
+          
+          echo "" >> release-notes.md
+          echo "" >> release-notes.md
+          echo "## 📦 Available Packages" >> release-notes.md
+          echo "" >> release-notes.md
+          echo "- **Python**: \`pip install truthmark-sdk==$VERSION\`" >> release-notes.md
+          echo "- **JavaScript**: \`npm install truthmark-sdk@$VERSION\`" >> release-notes.md
+          echo "- **TypeScript**: \`npm install @truthmark/sdk@$VERSION\`" >> release-notes.md
+          echo "- **Go**: \`go get github.com/truthmark/sdk-go@v$VERSION\`" >> release-notes.md
+          echo "- **Java**: Available in release artifacts" >> release-notes.md
+          
+          cat release-notes.md
+      
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ needs.validate-version.outputs.version }}
+          name: TruthMark SDK v${{ needs.validate-version.outputs.version }}
+          body_path: release-notes.md
+          draft: false
+          prerelease: ${{ needs.validate-version.outputs.is_prerelease == 'true' }}
+          files: |
+            release-artifacts/**/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  notify-release:
+    name: Notify Release
+    needs: [validate-version, publish-python, publish-npm, create-github-release]
+    runs-on: ubuntu-latest
+    if: always() && github.event.inputs.dry_run != 'true'
+    steps:
+      - name: Send Slack notification
+        uses: slackapi/slack-github-action@v1
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          payload: |
+            {
+              "text": "🚀 TruthMark SDK v${{ needs.validate-version.outputs.version }} Released!",
+              "blocks": [
+                {
+                  "type": "header",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "🚀 New Release: TruthMark SDK v${{ needs.validate-version.outputs.version }}"
+                  }
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Version:*\nv${{ needs.validate-version.outputs.version }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Type:*\n${{ needs.validate-version.outputs.is_prerelease == 'true' && 'Pre-release' || 'Stable' }}"
+                    }
+                  ]
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Release URL:* <https://github.com/${{ github.repository }}/releases/tag/v${{ needs.validate-version.outputs.version }}|View Release>"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

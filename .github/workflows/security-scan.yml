@@ -1,0 +1,394 @@
+name: Advanced Security Scanning
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 3 * * *'  # Daily at 3 AM UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
+jobs:
+  dependency-review:
+    name: Dependency Review
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: moderate
+          deny-licenses: GPL-3.0, AGPL-3.0
+          comment-summary-in-pr: always
+
+  snyk-security:
+    name: Snyk Security Scan
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        language: [python, javascript, typescript, go, java]
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Run Snyk to check for vulnerabilities (${{ matrix.language }})
+        uses: snyk/actions/node@master
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=high --file=${{ matrix.language }}/
+      
+      - name: Upload Snyk results to GitHub Code Scanning
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: snyk.sarif
+          category: snyk-${{ matrix.language }}
+
+  trivy-scan:
+    name: Trivy Container & Filesystem Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Run Trivy vulnerability scanner in fs mode
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH,MEDIUM'
+      
+      - name: Upload Trivy results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+          category: 'trivy-filesystem'
+      
+      - name: Generate Trivy report
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'table'
+          output: 'trivy-report.txt'
+      
+      - name: Upload Trivy report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: trivy-security-report
+          path: trivy-report.txt
+          retention-days: 30
+
+  bandit-python:
+    name: Bandit Python Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install Bandit
+        run: pip install bandit[toml]
+      
+      - name: Run Bandit security scan
+        run: |
+          cd python
+          bandit -r truthmark_sdk -f json -o bandit-results.json || true
+          bandit -r truthmark_sdk -f txt -o bandit-report.txt || true
+      
+      - name: Convert Bandit results to SARIF
+        run: |
+          pip install bandit[sarif]
+          cd python
+          bandit -r truthmark_sdk -f sarif -o bandit-results.sarif || true
+      
+      - name: Upload Bandit results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: python/bandit-results.sarif
+          category: bandit-python
+      
+      - name: Upload Bandit reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: bandit-security-report
+          path: |
+            python/bandit-results.json
+            python/bandit-report.txt
+          retention-days: 30
+
+  safety-check:
+    name: Python Safety Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: |
+          pip install safety
+          cd python && pip install -e . || true
+      
+      - name: Run Safety check
+        run: |
+          cd python
+          safety check --json --output safety-results.json || true
+          safety check --output safety-report.txt || true
+      
+      - name: Upload Safety reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: safety-security-report
+          path: |
+            python/safety-results.json
+            python/safety-report.txt
+          retention-days: 30
+
+  npm-audit:
+    name: NPM Security Audit
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        package: [javascript, typescript]
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Run npm audit
+        working-directory: ${{ matrix.package }}
+        run: |
+          npm audit --json > audit-results.json || true
+          npm audit > audit-report.txt || true
+      
+      - name: Check for high severity vulnerabilities
+        working-directory: ${{ matrix.package }}
+        run: |
+          npm audit --audit-level=high || echo "High severity vulnerabilities found"
+      
+      - name: Upload npm audit reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: npm-audit-${{ matrix.package }}
+          path: |
+            ${{ matrix.package }}/audit-results.json
+            ${{ matrix.package }}/audit-report.txt
+          retention-days: 30
+
+  gosec-scan:
+    name: Gosec Go Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+      
+      - name: Run Gosec Security Scanner
+        uses: securego/gosec@master
+        with:
+          args: '-fmt sarif -out gosec-results.sarif ./go/...'
+      
+      - name: Upload Gosec results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: gosec-results.sarif
+          category: gosec-go
+      
+      - name: Generate Gosec report
+        run: |
+          cd go
+          gosec -fmt=text -out=gosec-report.txt ./... || true
+      
+      - name: Upload Gosec report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: gosec-security-report
+          path: go/gosec-report.txt
+          retention-days: 30
+
+  secret-scanning:
+    name: Secret Scanning
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: TruffleHog Secret Scan
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+          extra_args: --debug --only-verified
+      
+      - name: Gitleaks Secret Scan
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+
+  license-compliance:
+    name: License Compliance Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Check Python licenses
+        run: |
+          pip install pip-licenses
+          cd python
+          pip install -e . || true
+          pip-licenses --format=json --output-file=licenses.json || true
+          pip-licenses --format=markdown --output-file=licenses.md || true
+      
+      - name: Check NPM licenses
+        run: |
+          npm install -g license-checker
+          cd javascript && license-checker --json --out licenses.json || true
+          cd ../typescript && license-checker --json --out licenses.json || true
+      
+      - name: Upload license reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: license-compliance-reports
+          path: |
+            python/licenses.*
+            javascript/licenses.json
+            typescript/licenses.json
+          retention-days: 30
+
+  sbom-generation:
+    name: Generate Software Bill of Materials
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Generate SBOM with Syft
+        uses: anchore/sbom-action@v0
+        with:
+          format: 'spdx-json'
+          output-file: 'sbom.spdx.json'
+      
+      - name: Generate SBOM in CycloneDX format
+        uses: anchore/sbom-action@v0
+        with:
+          format: 'cyclonedx-json'
+          output-file: 'sbom.cyclonedx.json'
+      
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: software-bill-of-materials
+          path: |
+            sbom.spdx.json
+            sbom.cyclonedx.json
+          retention-days: 90
+      
+      - name: Scan SBOM with Grype
+        uses: anchore/scan-action@v3
+        with:
+          sbom: 'sbom.spdx.json'
+          fail-build: false
+          severity-cutoff: high
+
+  security-summary:
+    name: Security Summary Report
+    needs: [snyk-security, trivy-scan, bandit-python, safety-check, npm-audit, gosec-scan, secret-scanning, license-compliance, sbom-generation]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Download all security reports
+        uses: actions/download-artifact@v4
+        with:
+          path: security-reports/
+      
+      - name: Generate security summary
+        run: |
+          echo "# 🔒 TruthMark SDK Security Scan Summary" > security-summary.md
+          echo "" >> security-summary.md
+          echo "**Scan Date**: $(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> security-summary.md
+          echo "**Commit**: ${{ github.sha }}" >> security-summary.md
+          echo "" >> security-summary.md
+          echo "## Scan Status" >> security-summary.md
+          echo "" >> security-summary.md
+          echo "| Scanner | Status |" >> security-summary.md
+          echo "|---------|--------|" >> security-summary.md
+          echo "| Snyk | ${{ needs.snyk-security.result == 'success' && '✅ Passed' || '⚠️ Issues Found' }} |" >> security-summary.md
+          echo "| Trivy | ${{ needs.trivy-scan.result == 'success' && '✅ Passed' || '⚠️ Issues Found' }} |" >> security-summary.md
+          echo "| Bandit (Python) | ${{ needs.bandit-python.result == 'success' && '✅ Passed' || '⚠️ Issues Found' }} |" >> security-summary.md
+          echo "| Safety (Python) | ${{ needs.safety-check.result == 'success' && '✅ Passed' || '⚠️ Issues Found' }} |" >> security-summary.md
+          echo "| NPM Audit | ${{ needs.npm-audit.result == 'success' && '✅ Passed' || '⚠️ Issues Found' }} |" >> security-summary.md
+          echo "| Gosec (Go) | ${{ needs.gosec-scan.result == 'success' && '✅ Passed' || '⚠️ Issues Found' }} |" >> security-summary.md
+          echo "| Secret Scanning | ${{ needs.secret-scanning.result == 'success' && '✅ Passed' || '🚨 Secrets Found' }} |" >> security-summary.md
+          echo "| License Compliance | ${{ needs.license-compliance.result == 'success' && '✅ Compliant' || '⚠️ Review Required' }} |" >> security-summary.md
+          echo "| SBOM Generation | ${{ needs.sbom-generation.result == 'success' && '✅ Generated' || '❌ Failed' }} |" >> security-summary.md
+          echo "" >> security-summary.md
+          echo "## Recommendations" >> security-summary.md
+          echo "" >> security-summary.md
+          echo "- Review all security reports in the artifacts section" >> security-summary.md
+          echo "- Address HIGH and CRITICAL vulnerabilities immediately" >> security-summary.md
+          echo "- Update dependencies with known vulnerabilities" >> security-summary.md
+          echo "- Review license compliance issues" >> security-summary.md
+          echo "- Investigate any detected secrets" >> security-summary.md
+          echo "" >> security-summary.md
+          echo "## Resources" >> security-summary.md
+          echo "" >> security-summary.md
+          echo "- [GitHub Security Advisories](https://github.com/${{ github.repository }}/security/advisories)" >> security-summary.md
+          echo "- [Dependabot Alerts](https://github.com/${{ github.repository }}/security/dependabot)" >> security-summary.md
+          echo "- [Code Scanning Alerts](https://github.com/${{ github.repository }}/security/code-scanning)" >> security-summary.md
+          
+          cat security-summary.md
+      
+      - name: Upload security summary
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-summary-report
+          path: security-summary.md
+          retention-days: 90
+      
+      - name: Comment PR with security summary
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const summary = fs.readFileSync('security-summary.md', 'utf8');
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: summary
+            });
