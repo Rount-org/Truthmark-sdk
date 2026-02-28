@@ -72,7 +72,7 @@ class TruthMarkClient(config: TruthMarkConfig = TruthMarkConfig()) {
             .post(requestBody)
 
         apiKey?.let {
-            requestBuilder.addHeader("Authorization", "Bearer $it")
+            requestBuilder.addHeader("X-API-Key", it)
         }
 
         val response = httpClient.newCall(requestBuilder.build()).execute()
@@ -113,7 +113,7 @@ class TruthMarkClient(config: TruthMarkConfig = TruthMarkConfig()) {
             .post(requestBody)
 
         apiKey?.let {
-            requestBuilder.addHeader("Authorization", "Bearer $it")
+            requestBuilder.addHeader("X-API-Key", it)
         }
 
         val response = httpClient.newCall(requestBuilder.build()).execute()

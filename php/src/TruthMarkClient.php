@@ -38,7 +38,7 @@ class TruthMarkClient
 
         $headers = [];
         if ($this->apiKey) {
-            $headers[] = "Authorization: Bearer {$this->apiKey}";
+            $headers[] = "X-API-Key: {$this->apiKey}";
         }
 
         curl_setopt_array($ch, [
@@ -94,7 +94,7 @@ class TruthMarkClient
 
         $headers = [];
         if ($this->apiKey) {
-            $headers[] = "Authorization: Bearer {$this->apiKey}";
+            $headers[] = "X-API-Key: {$this->apiKey}";
         }
 
         curl_setopt_array($ch, [

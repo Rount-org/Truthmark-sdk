@@ -77,7 +77,7 @@ namespace TruthMark.SDK
 
             if (!string.IsNullOrEmpty(_apiKey))
             {
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _apiKey);
+                request.Headers.Add("X-API-Key", _apiKey);
             }
 
             var response = await _httpClient.SendAsync(request);
@@ -111,7 +111,7 @@ namespace TruthMark.SDK
 
             if (!string.IsNullOrEmpty(_apiKey))
             {
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _apiKey);
+                request.Headers.Add("X-API-Key", _apiKey);
             }
 
             var response = await _httpClient.SendAsync(request);

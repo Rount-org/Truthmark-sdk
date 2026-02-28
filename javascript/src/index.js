@@ -62,7 +62,7 @@ class TruthMarkClient {
             const response = await fetch(`${this.baseUrl}/v1/encode`, {
                 method: 'POST',
                 body: form,
-                headers: this.apiKey ? { 'Authorization': `Bearer ${this.apiKey}` } : {}
+                headers: this.apiKey ? { 'X-API-Key': this.apiKey } : {}
             });
 
             if (!response.ok) {
@@ -79,7 +79,7 @@ class TruthMarkClient {
             const response = await fetch(`${this.baseUrl}/v1/encode`, {
                 method: 'POST',
                 body: formData,
-                headers: this.apiKey ? { 'Authorization': `Bearer ${this.apiKey}` } : {}
+                headers: this.apiKey ? { 'X-API-Key': this.apiKey } : {}
             });
 
             if (!response.ok) {
@@ -108,7 +108,7 @@ class TruthMarkClient {
             const response = await fetch(`${this.baseUrl}/v1/decode`, {
                 method: 'POST',
                 body: form,
-                headers: this.apiKey ? { 'Authorization': `Bearer ${this.apiKey}` } : {}
+                headers: this.apiKey ? { 'X-API-Key': this.apiKey } : {}
             });
 
             if (!response.ok) {
@@ -124,7 +124,7 @@ class TruthMarkClient {
             const response = await fetch(`${this.baseUrl}/v1/decode`, {
                 method: 'POST',
                 body: formData,
-                headers: this.apiKey ? { 'Authorization': `Bearer ${this.apiKey}` } : {}
+                headers: this.apiKey ? { 'X-API-Key': this.apiKey } : {}
             });
 
             if (!response.ok) {
@@ -136,11 +136,8 @@ class TruthMarkClient {
     }
 }
 
-// Export for both CommonJS and ES modules
+// CommonJS export
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = { TruthMarkClient };
     module.exports.default = TruthMarkClient;
 }
-
-export { TruthMarkClient };
-export default TruthMarkClient;

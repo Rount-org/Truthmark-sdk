@@ -79,7 +79,7 @@ public class TruthMarkClient {
                 .post(requestBody);
 
         if (apiKey != null) {
-            requestBuilder.addHeader("Authorization", "Bearer " + apiKey);
+            requestBuilder.addHeader("X-API-Key", apiKey);
         }
 
         try (Response response = httpClient.newCall(requestBuilder.build()).execute()) {
@@ -115,7 +115,7 @@ public class TruthMarkClient {
                 .post(requestBody);
 
         if (apiKey != null) {
-            requestBuilder.addHeader("Authorization", "Bearer " + apiKey);
+            requestBuilder.addHeader("X-API-Key", apiKey);
         }
 
         try (Response response = httpClient.newCall(requestBuilder.build()).execute()) {

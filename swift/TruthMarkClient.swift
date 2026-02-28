@@ -76,7 +76,7 @@ public class TruthMarkClient {
         request.httpMethod = "POST"
         
         if let apiKey = config.apiKey {
-            request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+            request.setValue(apiKey, forHTTPHeaderField: "X-API-Key")
         }
         
         let boundary = UUID().uuidString
@@ -137,7 +137,7 @@ public class TruthMarkClient {
         request.httpMethod = "POST"
         
         if let apiKey = config.apiKey {
-            request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+            request.setValue(apiKey, forHTTPHeaderField: "X-API-Key")
         }
         
         let boundary = UUID().uuidString

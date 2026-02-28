@@ -106,7 +106,7 @@ func (c *Client) Encode(imagePath, message string) (*EncodeResult, error) {
 
 	req.Header.Set("Content-Type", contentType)
 	if c.apiKey != "" {
-		req.Header.Set("Authorization", "Bearer "+c.apiKey)
+		req.Header.Set("X-API-Key", c.apiKey)
 	}
 
 	// Execute request
@@ -161,7 +161,7 @@ func (c *Client) Decode(imagePath string) (*DecodeResult, error) {
 
 	req.Header.Set("Content-Type", contentType)
 	if c.apiKey != "" {
-		req.Header.Set("Authorization", "Bearer "+c.apiKey)
+		req.Header.Set("X-API-Key", c.apiKey)
 	}
 
 	// Execute request

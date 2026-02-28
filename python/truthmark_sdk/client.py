@@ -19,7 +19,7 @@ class TruthMarkClient:
         self.base_url = base_url.rstrip('/')
         self.api_key = api_key
         self.headers = {
-            "Authorization": f"Bearer {api_key}"
+            "X-API-Key": api_key
         }
 
     def encode(self, image_path: str, message: str, output_path: Optional[str] = None) -> Dict[str, Any]:

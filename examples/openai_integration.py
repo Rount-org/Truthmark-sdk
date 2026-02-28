@@ -47,14 +47,15 @@ def simulate_openai_integration():
     message = json.dumps(metadata)
     print(f"   ✓ Metadata: {message}")
 
-    # Initialize SDK
-    client = TruthMarkClient()
+    # Initialize SDK (use your API key, or "dev" in dev mode with no keys configured)
+    client = TruthMarkClient(api_key=os.getenv("TRUTHMARK_API_KEY", "dev"))
     
     watermarked_path = "dalle_gen_protected.png"
     result = client.encode(original_path, message, watermarked_path)
     
+    psnr = result.get("metadata", {}).get("psnr", 0)
     print("   ✓ Watermark Embedded!")
-    print(f"   ✓ PSNR Quality: {result['psnr']:.2f} dB (Invisible)")
+    print(f"   ✓ PSNR Quality: {psnr:.2f} dB (Invisible)")
     print(f"   ✓ Saved to: {watermarked_path}")
 
     # 3. User Downloads & Manipulates (Attack)

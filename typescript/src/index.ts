@@ -52,7 +52,7 @@ export class TruthMarkClient {
             const response = await fetch(`${this.baseUrl}/v1/encode`, {
                 method: 'POST',
                 body: form as any,
-                headers: this.apiKey ? { 'Authorization': `Bearer ${this.apiKey}` } : {}
+                headers: this.apiKey ? { 'X-API-Key': this.apiKey } : {}
             });
 
             if (!response.ok) {
@@ -69,7 +69,7 @@ export class TruthMarkClient {
             const response = await fetch(`${this.baseUrl}/v1/encode`, {
                 method: 'POST',
                 body: formData,
-                headers: this.apiKey ? { 'Authorization': `Bearer ${this.apiKey}` } : {}
+                headers: this.apiKey ? { 'X-API-Key': this.apiKey } : {}
             });
 
             if (!response.ok) {
@@ -92,7 +92,7 @@ export class TruthMarkClient {
             const response = await fetch(`${this.baseUrl}/v1/decode`, {
                 method: 'POST',
                 body: form as any,
-                headers: this.apiKey ? { 'Authorization': `Bearer ${this.apiKey}` } : {}
+                headers: this.apiKey ? { 'X-API-Key': this.apiKey } : {}
             });
 
             if (!response.ok) {
@@ -108,7 +108,7 @@ export class TruthMarkClient {
             const response = await fetch(`${this.baseUrl}/v1/decode`, {
                 method: 'POST',
                 body: formData,
-                headers: this.apiKey ? { 'Authorization': `Bearer ${this.apiKey}` } : {}
+                headers: this.apiKey ? { 'X-API-Key': this.apiKey } : {}
             });
 
             if (!response.ok) {

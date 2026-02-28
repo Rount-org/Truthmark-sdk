@@ -11,11 +11,11 @@ from typing import Union, Optional, Dict, Any, Tuple
 from dataclasses import dataclass
 import json
 
-from ..core.crypto import CryptoEngine
-from ..core.embedder import WatermarkEmbedder
-from ..core.payload import PayloadBuilder
-from ..core.config import TruthMarkConfig, get_config
-from ..ai.saliency_detector import SaliencyDetector
+from truthmark.core.crypto import CryptoEngine
+from truthmark.core.embedder import WatermarkEmbedder
+from truthmark.core.payload import PayloadBuilder
+from truthmark.core.config import TruthMarkConfig, get_config
+from truthmark.ai.saliency_detector import SaliencyDetector
 
 
 @dataclass
@@ -236,16 +236,12 @@ class TruthMarkEmbedder:
             payload_json = json.dumps(payload_dict, separators=(',', ':'))
             payload_bytes = payload_json.encode('utf-8')
             
-            # Apply error correction if enabled
+            # Encrypt first, then ECC (matches API decode order: ECC decode → decrypt)
+            encrypted_payload = self.crypto.encrypt(payload_bytes)
             if self.config.use_error_correction:
-                from ..core.error_correction import ErrorCorrection
+                from truthmark.core.error_correction import ErrorCorrection
                 ecc = ErrorCorrection(ecc_symbols=self.config.get_ecc_symbols())
-                payload_bytes = ecc.encode(payload_bytes)
-            
-            # Encrypt payload
-            encrypted_data, integrity_hash = self.crypto.encrypt(payload_bytes)
-            # Combine encrypted data and hash for embedding
-            encrypted_payload = encrypted_data + integrity_hash
+                encrypted_payload = ecc.encode(encrypted_payload)
             
             # Compute saliency map if AI enabled
             saliency_map = None

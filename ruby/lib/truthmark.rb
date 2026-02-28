@@ -55,7 +55,7 @@ module TruthMark
 
     def build_request(uri)
       request = Net::HTTP::Post.new(uri)
-      request['Authorization'] = "Bearer #{api_key}" if api_key
+      request['X-API-Key'] = api_key if api_key
       request
     end
 

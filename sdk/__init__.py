@@ -2,5 +2,6 @@
 
 from .embedder import TruthMarkEmbedder, EmbedResult
 from .detector import TruthMarkDetector, DetectResult
+from .integrator import TruthMarkIntegrator
 
-__all__ = ["TruthMarkEmbedder", "TruthMarkDetector", "EmbedResult", "DetectResult"]
+__all__ = ["TruthMarkEmbedder", "TruthMarkDetector", "EmbedResult", "DetectResult", "TruthMarkIntegrator"]
