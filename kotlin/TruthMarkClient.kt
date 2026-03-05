@@ -31,6 +31,12 @@ data class DecodeResult(
     val confidence: Double
 )
 
+data class VerifyResult(
+    val watermarked: Boolean,
+    val confidence: Double,
+    val sync_confidence: Double
+)
+
 class TruthMarkClient(config: TruthMarkConfig = TruthMarkConfig()) {
     private val baseUrl = config.baseUrl
     private val apiKey = config.apiKey
@@ -126,5 +132,44 @@ class TruthMarkClient(config: TruthMarkConfig = TruthMarkConfig()) {
             ?: throw IOException("Empty response body")
 
         return gson.fromJson(responseBody, DecodeResult::class.java)
+    }
+
+    /**
+     * Check whether an image contains a TruthMark watermark
+     */
+    @Throws(IOException::class)
+    fun verify(imagePath: String): VerifyResult {
+        val imageFile = File(imagePath)
+        if (!imageFile.exists()) {
+            throw IOException("Image file not found: $imagePath")
+        }
+
+        val requestBody = MultipartBody.Builder()
+            .setType(MultipartBody.FORM)
+            .addFormDataPart(
+                "file",
+                imageFile.name,
+                imageFile.asRequestBody("image/*".toMediaTypeOrNull())
+            )
+            .build()
+
+        val requestBuilder = Request.Builder()
+            .url("$baseUrl/v1/verify")
+            .post(requestBody)
+
+        apiKey?.let {
+            requestBuilder.addHeader("X-API-Key", it)
+        }
+
+        val response = httpClient.newCall(requestBuilder.build()).execute()
+
+        if (!response.isSuccessful) {
+            throw IOException("API Error: ${response.code}")
+        }
+
+        val responseBody = response.body?.string()
+            ?: throw IOException("Empty response body")
+
+        return gson.fromJson(responseBody, VerifyResult::class.java)
     }
 }

@@ -34,6 +34,13 @@ namespace TruthMark.SDK
         public double Confidence { get; set; }
     }
 
+    public class VerifyResult
+    {
+        public bool Watermarked { get; set; }
+        public double Confidence { get; set; }
+        public double SyncConfidence { get; set; }
+    }
+
     public class TruthMarkClient : IDisposable
     {
         private readonly HttpClient _httpClient;
@@ -119,6 +126,40 @@ namespace TruthMark.SDK
 
             var responseBody = await response.Content.ReadAsStringAsync();
             return JsonSerializer.Deserialize<DecodeResult>(responseBody);
+        }
+
+        /// <summary>
+        /// Check whether an image contains a TruthMark watermark
+        /// </summary>
+        public async Task<VerifyResult> VerifyAsync(string imagePath)
+        {
+            if (!File.Exists(imagePath))
+            {
+                throw new FileNotFoundException($"Image file not found: {imagePath}");
+            }
+
+            using var form = new MultipartFormDataContent();
+            using var fileStream = File.OpenRead(imagePath);
+            using var fileContent = new StreamContent(fileStream);
+            
+            fileContent.Headers.ContentType = MediaTypeHeaderValue.Parse("image/png");
+            form.Add(fileContent, "file", Path.GetFileName(imagePath));
+
+            var request = new HttpRequestMessage(HttpMethod.Post, $"{_baseUrl}/v1/verify")
+            {
+                Content = form
+            };
+
+            if (!string.IsNullOrEmpty(_apiKey))
+            {
+                request.Headers.Add("X-API-Key", _apiKey);
+            }
+
+            var response = await _httpClient.SendAsync(request);
+            response.EnsureSuccessStatusCode();
+
+            var responseBody = await response.Content.ReadAsStringAsync();
+            return JsonSerializer.Deserialize<VerifyResult>(responseBody);
         }
 
         public void Dispose()

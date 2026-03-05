@@ -40,6 +40,12 @@ public class TruthMarkClient {
         public double confidence;
     }
 
+    public static class VerifyResult {
+        public boolean watermarked;
+        public double confidence;
+        public double sync_confidence;
+    }
+
     public TruthMarkClient() {
         this(new Config());
     }
@@ -125,6 +131,38 @@ public class TruthMarkClient {
 
             String responseBody = response.body().string();
             return gson.fromJson(responseBody, DecodeResult.class);
+        }
+    }
+
+    /**
+     * Check whether an image contains a TruthMark watermark
+     */
+    public VerifyResult verify(String imagePath) throws IOException {
+        File imageFile = new File(imagePath);
+        if (!imageFile.exists()) {
+            throw new IOException("Image file not found: " + imagePath);
+        }
+
+        RequestBody requestBody = new MultipartBody.Builder()
+                .setType(MultipartBody.FORM)
+                .addFormDataPart("file", imageFile.getName(),
+                        RequestBody.create(imageFile, MediaType.parse("image/*")))
+                .build();
+
+        Request.Builder requestBuilder = new Request.Builder()
+                .url(baseUrl + "/v1/verify")
+                .post(requestBody);
+
+        if (apiKey != null) {
+            requestBuilder.addHeader("X-API-Key", apiKey);
+        }
+
+        try (Response response = httpClient.newCall(requestBuilder.build()).execute()) {
+            if (!response.isSuccessful()) {
+                throw new IOException("API Error: " + response.code());
+            }
+            String responseBody = response.body().string();
+            return gson.fromJson(responseBody, VerifyResult.class);
         }
     }
 }

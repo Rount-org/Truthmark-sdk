@@ -95,3 +95,30 @@ class TruthMarkClient:
         except Exception as e:
             print(f"Warning: Failed to download result image: {e}")
 
+    def verify(self, image_path: str) -> Dict[str, Any]:
+        """
+        Check whether an image contains a TruthMark watermark.
+        Lighter than decode() — returns only watermark presence and confidence.
+
+        Args:
+            image_path: Path to the image to check
+
+        Returns:
+            Dictionary with 'watermarked' (bool) and 'confidence' (float)
+        """
+        if not os.path.exists(image_path):
+            raise ValueError(f"Image not found: {image_path}")
+
+        url = f"{self.base_url}/v1/verify"
+
+        with open(image_path, 'rb') as f:
+            files = {'file': f}
+
+            try:
+                response = requests.post(url, files=files, headers=self.headers)
+                response.raise_for_status()
+                return response.json()
+
+            except requests.exceptions.RequestException as e:
+                raise Exception(f"API Request Failed: {str(e)}")
+

@@ -26,6 +26,12 @@ interface DecodeResult {
     confidence: number;
 }
 
+interface VerifyResult {
+    watermarked: boolean;
+    confidence: number;
+    sync_confidence: number;
+}
+
 export class TruthMarkClient {
     private apiKey: string | null;
     private baseUrl: string;
@@ -115,6 +121,36 @@ export class TruthMarkClient {
                 throw new Error(`API Error: ${response.status}`);
             }
 
+            return response.json();
+        }
+    }
+
+    async verify(imagePath: string | File | Blob): Promise<VerifyResult> {
+        if (typeof imagePath === 'string') {
+            const fs = await import('node:fs');
+            const FormDataNode = await import('form-data');
+            const form = new FormDataNode.default();
+            form.append('file', fs.createReadStream(imagePath));
+
+            const response = await fetch(`${this.baseUrl}/v1/verify`, {
+                method: 'POST',
+                body: form as any,
+                headers: this.apiKey ? { 'X-API-Key': this.apiKey } : {}
+            });
+
+            if (!response.ok) throw new Error(`API Error: ${response.status}`);
+            return response.json();
+        } else {
+            const formData = new FormData();
+            formData.append('file', imagePath);
+
+            const response = await fetch(`${this.baseUrl}/v1/verify`, {
+                method: 'POST',
+                body: formData,
+                headers: this.apiKey ? { 'X-API-Key': this.apiKey } : {}
+            });
+
+            if (!response.ok) throw new Error(`API Error: ${response.status}`);
             return response.json();
         }
     }

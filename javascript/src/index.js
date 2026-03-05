@@ -134,6 +134,41 @@ class TruthMarkClient {
             return response.json();
         }
     }
+
+    /**
+     * Check whether an image contains a TruthMark watermark
+     * @param {string|File|Blob} imagePath - Path to image file or File/Blob object
+     * @returns {Promise<{watermarked: boolean, confidence: number}>} Verification result
+     */
+    async verify(imagePath) {
+        if (typeof imagePath === 'string') {
+            const fs = await import('node:fs');
+            const FormDataNode = await import('form-data');
+            const form = new FormDataNode.default();
+            form.append('file', fs.createReadStream(imagePath));
+
+            const response = await fetch(`${this.baseUrl}/v1/verify`, {
+                method: 'POST',
+                body: form,
+                headers: this.apiKey ? { 'X-API-Key': this.apiKey } : {}
+            });
+
+            if (!response.ok) throw new Error(`API Error: ${response.status}`);
+            return response.json();
+        } else {
+            const formData = new FormData();
+            formData.append('file', imagePath);
+
+            const response = await fetch(`${this.baseUrl}/v1/verify`, {
+                method: 'POST',
+                body: formData,
+                headers: this.apiKey ? { 'X-API-Key': this.apiKey } : {}
+            });
+
+            if (!response.ok) throw new Error(`API Error: ${response.status}`);
+            return response.json();
+        }
+    }
 }
 
 // CommonJS export

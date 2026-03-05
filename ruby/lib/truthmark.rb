@@ -51,6 +51,23 @@ module TruthMark
       execute_request(uri, request)
     end
 
+    # Check whether an image contains a TruthMark watermark
+    # @param image_path [String] Path to image
+    # @return [Hash] Verify result with watermarked flag and confidence
+    def verify(image_path)
+      raise ArgumentError, "Image file not found: #{image_path}" unless File.exist?(image_path)
+
+      uri = URI.parse("#{base_url}/v1/verify")
+      request = build_request(uri)
+
+      request.set_form(
+        [['file', File.open(image_path)]],
+        'multipart/form-data'
+      )
+
+      execute_request(uri, request)
+    end
+
     private
 
     def build_request(uri)

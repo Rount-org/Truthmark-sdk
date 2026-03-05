@@ -39,6 +39,13 @@ type DecodeResult struct {
 	Confidence float64 `json:"confidence"`
 }
 
+// VerifyResult represents the verify API response
+type VerifyResult struct {
+	Watermarked    bool    `json:"watermarked"`
+	Confidence     float64 `json:"confidence"`
+	SyncConfidence float64 `json:"sync_confidence"`
+}
+
 // Client is the TruthMark API client
 type Client struct {
 	baseURL    string

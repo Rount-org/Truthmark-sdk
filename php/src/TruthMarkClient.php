@@ -128,4 +128,60 @@ class TruthMarkClient
 
         return $result;
     }
+
+    /**
+     * Check whether an image contains a TruthMark watermark
+     *
+     * @param string $imagePath Path to image to check
+     * @return array Verify result with watermarked flag and confidence
+     * @throws \Exception
+     */
+    public function verify(string $imagePath): array
+    {
+        if (!file_exists($imagePath)) {
+            throw new \Exception("Image file not found: {$imagePath}");
+        }
+
+        $ch = curl_init();
+
+        $data = [
+            'file' => new \CURLFile($imagePath)
+        ];
+
+        $headers = [];
+        if ($this->apiKey) {
+            $headers[] = "X-API-Key: {$this->apiKey}";
+        }
+
+        curl_setopt_array($ch, [
+            CURLOPT_URL => "{$this->baseUrl}/v1/verify",
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => $data,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTPHEADER => $headers,
+            CURLOPT_TIMEOUT => $this->timeout,
+        ]);
+
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+
+        if (curl_errno($ch)) {
+            $error = curl_error($ch);
+            curl_close($ch);
+            throw new \Exception("cURL error: {$error}");
+        }
+
+        curl_close($ch);
+
+        if ($httpCode !== 200) {
+            throw new \Exception("API Error: HTTP {$httpCode}");
+        }
+
+        $result = json_decode($response, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            throw new \Exception("Failed to parse JSON response");
+        }
+
+        return $result;
+    }
 }

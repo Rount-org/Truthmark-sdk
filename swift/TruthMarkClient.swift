@@ -43,6 +43,17 @@ public struct DecodeResult: Codable {
     public let confidence: Double
 }
 
+public struct VerifyResult: Codable {
+    public let watermarked: Bool
+    public let confidence: Double
+    public let syncConfidence: Double
+
+    enum CodingKeys: String, CodingKey {
+        case watermarked, confidence
+        case syncConfidence = "sync_confidence"
+    }
+}
+
 public enum TruthMarkError: Error {
     case fileNotFound
     case networkError(Error)
@@ -169,6 +180,55 @@ public class TruthMarkClient {
             
             let decoder = JSONDecoder()
             return try decoder.decode(DecodeResult.self, from: data)
+        } catch let error as TruthMarkError {
+            throw error
+        } catch {
+            throw TruthMarkError.networkError(error)
+        }
+    }
+
+    /// Check whether an image contains a TruthMark watermark
+    public func verify(imagePath: String) async throws -> VerifyResult {
+        guard FileManager.default.fileExists(atPath: imagePath) else {
+            throw TruthMarkError.fileNotFound
+        }
+
+        guard let url = URL(string: "\(config.baseURL)/v1/verify") else {
+            throw TruthMarkError.apiError(0, "Invalid URL")
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+
+        if let apiKey = config.apiKey {
+            request.setValue(apiKey, forHTTPHeaderField: "X-API-Key")
+        }
+
+        let boundary = UUID().uuidString
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+
+        let imageData = try Data(contentsOf: URL(fileURLWithPath: imagePath))
+        let fileName = URL(fileURLWithPath: imagePath).lastPathComponent
+
+        var body = Data()
+        body.append("--\(boundary)\r\n".data(using: .utf8)!)
+        body.append("Content-Disposition: form-data; name=\"file\"; filename=\"\(fileName)\"\r\n".data(using: .utf8)!)
+        body.append("Content-Type: image/png\r\n\r\n".data(using: .utf8)!)
+        body.append(imageData)
+        body.append("\r\n".data(using: .utf8)!)
+        body.append("--\(boundary)--\r\n".data(using: .utf8)!)
+
+        request.httpBody = body
+
+        do {
+            let (data, response) = try await session.data(for: request)
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw TruthMarkError.networkError(NSError(domain: "Invalid response", code: 0))
+            }
+            guard httpResponse.statusCode == 200 else {
+                throw TruthMarkError.apiError(httpResponse.statusCode, "API Error")
+            }
+            return try JSONDecoder().decode(VerifyResult.self, from: data)
         } catch let error as TruthMarkError {
             throw error
         } catch {
